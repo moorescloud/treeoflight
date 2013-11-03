@@ -15,7 +15,7 @@ __author__ = 'Mark Pesce'
 __version__ = '1.0a1'
 __license__ = 'MIT'
 
-import time, 
+import time 
 from multiprocessing import Queue
 
 parse_queue = None
