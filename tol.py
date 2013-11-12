@@ -19,12 +19,18 @@ __version__ = '1.0a1'
 __license__ = 'MIT'
 
 import sys, time
-import ConfigParser
+
+# setup the logging which will eventually be quite sophisticated
+#
+import logging
+logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s', datefmt='%d/%m/%Y %I:%M:%S %p', level=logging.DEBUG)
+logging.debug('Logging initialized')
+
 
 # Multiprocessing requires Python 2.6 or better
 v = sys.version_info
 if v[0] != 2 or v[1] < 6:
-	print("holideck requires Python 2.6.x or Python 2.7.x -- aborting")
+	logging.critical("tol requires Python 2.6.x or Python 2.7.x -- aborting")
 	sys.exit(0)
 
 from multiprocessing import Process, Queue
@@ -53,17 +59,17 @@ if __name__ == '__main__':
 	rnp.start()
 
 
-	print "Everything should be starting up now..."
+	logging.debug("Everything should be starting up now...")
 
 	# Now we wait.  When we get a control-C, we exit -- hopefully.
 	while True:
 		try:
 			time.sleep(.1)
 		except KeyboardInterrupt:
-			print("\nTerminating simulator...")
+			logging.debug("\nTerminating simulator...")
 			tlp.terminate()
 			cpp.terminate()
 			rnp.terminate()
-			print("Exiting.")
+			logging.debug("Exiting.")
 			sys.exit(0)
 

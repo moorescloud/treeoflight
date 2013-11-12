@@ -15,13 +15,16 @@ __author__ = 'Mark Pesce'
 __version__ = '1.0a1'
 __license__ = 'MIT'
 
-import time, 
+import time
 from multiprocessing import Queue
+import logging
 
 rend_queue = None
 
 def render(queue_object):
 	"""Rendering routine.  What it does, I have no clue yet."""
+	(shape_name, shape_data, colorval) = queue_object
+	
 	return
 
 def run(render_queue):
@@ -36,4 +39,6 @@ def run(render_queue):
 		time.sleep(.025)
 
 if __name__ == '__main__':	
-	print "Running renderer module from the command line."
+	logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.DEBUG)
+	logging.debug('Logging initialized')
+	logging.debug("Running cmdparser module from the command line.")

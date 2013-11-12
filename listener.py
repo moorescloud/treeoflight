@@ -15,7 +15,7 @@ __author__ = 'Mark Pesce'
 __version__ = '1.0a1'
 __license__ = 'MIT'
 
-import time, os, sys, json, threading
+import time, os, sys, json, threading, logging
 from multiprocessing import Queue
 
 # Very sorry -- the OAuth code was written using one module package,
@@ -60,12 +60,12 @@ def check_twitter_auth():
 			#print 'Good, we seem to be authorized for username %s with id %d' % (twitter_handle, int(twitter_id))
 			authorized = twapi
 		except twitter.TwitterError as e:
-			print "Call failed, we don't seem to be authorized with existing credentials.  Deleting..."
+			logging.debug("Call failed, we don't seem to be authorized with existing credentials.  Deleting...")
 			print e
 			os.remove(fn)
 
 	if authorized == False:                   # If not authorized, do the OAuth dance
-		print 'Authorizing the app...'
+		logging.debug("Authorizing the app...")
 		tokens = oauth_dance(app_name='TreeOfLight', consumer_key=con_key, consumer_secret=con_secret, token_filename=fn)
 		os.chmod(fn, stat.S_IRUSR | stat.S_IWUSR)		# Read/write, user-only
 		#
@@ -79,10 +79,10 @@ def check_twitter_auth():
 			result = twapi.account.verify_credentials()
 			twitter_id = result['id']
 			twitter_handle = result['screen_name']
-			print 'Good, we seem to be authorized for username %s with id %d' % (twitter_handle, int(twitter_id))
+			logging.debug("Good, we seem to be authorized for username %s with id %d" % (twitter_handle, int(twitter_id)))
 			authorized = twapi
 		except twitter.TwitterError as e:		# Something bad happening, abort, abort!
-			print "Call failed, we don't seem to be authorized with new credentials.  Deleting..."
+			logging.debug("Call failed, we don't seem to be authorized with new credentials.  Deleting...")
 			print e
 			os.remove(fn)
 			
@@ -101,7 +101,7 @@ class UserVerify(object):
 		while True:
 			time.sleep(15)			# Sleep for 15 seconds
 			current_timestamp = time.time()
-			print "Cleaning naughtylist"
+			logging.debug("Cleaning naughtylist")
 			for naughty in self.naughtylist:
 				if (self.naughtylist[naughty] + self.SIN_BIN_SECS) < current_timestamp:	# Time out?
 					del self.naughtylist[naughty]			# Remove from list
@@ -117,17 +117,17 @@ class UserVerify(object):
 			f = open('tol-whitelist.json')
 			d = f.read()
 			self.whitelist = json.loads(d)
-			print self.whitelist
+			logging.debug(self.whitelist)
 		except:
-			print "Could not read whitelist"
+			logging.debug("Could not read whitelist")
 			self.whitelist = []
 		try:
 			f = open('tol-blacklist.json')
 			d = f.read()
 			self.blacklist = json.loads(d)
-			print self.blacklist
+			logging.debug(self.blacklist)
 		except:
-			print "Could not read blacklist"
+			logging.debug("Could not read blacklist")
 			self.blacklist = []
 
 		self.userlist = {}
@@ -211,7 +211,7 @@ class StdOutListener(StreamListener):
 	def on_data(self, data):
 		global uv, cmd_parser_queue
 
-		print "Got data"
+		logging.debug("Got data")
 		djt = json.loads(data)
 		print djt
 		try:
@@ -221,17 +221,17 @@ class StdOutListener(StreamListener):
 				msg = djt['text']
 				#print msg
 				# Let's enqueue the message to the Command Parser
-				cmd_parser_queue.send([user, msg])
+				cmd_parser_queue.put([user, msg])
 				# and we're done here
 
 		except KeyError:
-			#print "KeyError, skipping..."
+			#logging.debug("KeyError, skipping..."
 			pass
 
 		return True
 
 	def on_error(self, status):
-		print status
+		logging.error(status)
 
 cmd_parser_queue = None			# Set up a global variable
 
@@ -244,9 +244,9 @@ def run(parser_queue):
 	try:
 		if (check_twitter_auth() == False):
 			sys.exit()
-		print "Authorized"
+		logging.debug("Authorized")
 	except:
-		print "FATAL: Authorization failed, exiting process."
+		logging.critical("FATAL: Authorization failed, exiting process.")
 		# We need to figure out what to do to recover from this failure, if it happens.
 		sys.exit()
 	
@@ -263,11 +263,12 @@ def run(parser_queue):
 	stream.userstream()  # Blocking call.  We do not come back.  We think this is right.  Possibly.
 
 	while True:
-		print "Where we should never be in the listener -- que?"
+		logging.debug("Where we should never be in the listener -- que?")
 		time.sleep(1)
 
 if __name__ == '__main__':	
-	print "Running listener module from the command line."
-
+	logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.DEBUG)
+	logging.debug('Logging initialized')
+	logging.debug("Running cmdparser module from the command line.")
 
 
