@@ -211,21 +211,31 @@ class StdOutListener(StreamListener):
 	def on_data(self, data):
 		global uv, cmd_parser_queue
 
-		logging.debug("Got data")
-		djt = json.loads(data)
-		print djt
+		printme("Got data")
+		#printme(data)
+
 		try:
-			user = djt['username']
+			djt = json.loads(data)
+			#printme(djt)
+
+		except ValueError:
+			printme("No JSON-parseable data, ignoring...")
+			return True 
+
+		try:
+			user = djt['user']['screen_name']
+			printme(user)
 			if uv.test(user) == True:
 				# Got a good user, we can pass this along to the parser...
 				msg = djt['text']
 				#print msg
 				# Let's enqueue the message to the Command Parser
+				printme("Enqueuing %s from %s" % (msg, user))
 				cmd_parser_queue.put([user, msg])
 				# and we're done here
 
 		except KeyError:
-			#logging.debug("KeyError, skipping..."
+			printme("KeyError, skipping...")
 			pass
 
 		return True
@@ -241,16 +251,17 @@ def run(parser_queue):
 	cmd_parser_queue = parser_queue
 
 	# Log into Twitter, get credentials.
-	try:
-		if (check_twitter_auth() == False):
-			sys.exit()
-		logging.debug("Authorized")
-	except:
-		logging.critical("FATAL: Authorization failed, exiting process.")
+	#try:
+	#	if (check_twitter_auth() == False):
+	#		sys.exit()
+	#	logging.debug("Authorized")
+	#except:
+	#	logging.critical("FATAL: Authorization failed, exiting process.")
 		# We need to figure out what to do to recover from this failure, if it happens.
-		sys.exit()
+	#	sys.exit()
 	
 	tokens = twitter.oauth.read_token_file(fn)
+	printme("We have authorization tokens")
 
 	l = StdOutListener()
 	auth = OAuthHandler(consumer_key, consumer_secret)
@@ -263,12 +274,23 @@ def run(parser_queue):
 	stream.userstream()  # Blocking call.  We do not come back.  We think this is right.  Possibly.
 
 	while True:
-		logging.debug("Where we should never be in the listener -- que?")
+		printme("Where we should never be in the listener -- que?")
 		time.sleep(1)
 
+def printme(str):
+	"""A print function that can switch quickly to logging"""
+	#print(str)
+	logging.debug(str)
+
 if __name__ == '__main__':	
-	logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.DEBUG)
+	logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 	logging.debug('Logging initialized')
 	logging.debug("Running cmdparser module from the command line.")
+	cmd_parser_queue = None
+	parser_queue = Queue()
+	printme("one")
+	printme("two")
+	printme("three")
+	run(parser_queue) 
 
 

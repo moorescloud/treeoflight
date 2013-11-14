@@ -30,7 +30,7 @@ shapes = { "crown": None, "ho": None, "eye": None, "heart": None,
 # Start with these and add more later
 #
 colordict = { "red": 0xff0000, "green": 0x00ff00, "blue": 0x0000ff, "orange": 0xff8000, "yellow": 0xffff00, 
-"cyan": 0x00ffff, "purple": 0xFF00FF, "pink": 0xFF3030 }
+"cyan": 0x00ffff, "purple": 0xFF00FF, "pink": 0xFF3030, "white": 0xffffff }
 
 
 def parse(queue_object):
@@ -46,7 +46,7 @@ def parse(queue_object):
 	# Ok let"s split the line into a list of lower-case elements
 	elements = msg.lower().split(" ")
 	logging.debug(elements)
-	if elements[0] != "@daringharbourtree":
+	if elements[0] != "@darlingxmastree":
 		logging.debug("Rejected, not addressed to us")
 		return False
 
@@ -99,4 +99,4 @@ if __name__ == "__main__":
 	logging.debug("Running cmdparser module from the command line.")
 	rend_queue = Queue()			# We don't do this if we're running as a module
 
-	parse(("test", "@DaringHarbourTree crown green"))
+	parse(("test", "@DarlingXmasTree crown green"))
