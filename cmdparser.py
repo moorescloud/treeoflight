@@ -15,11 +15,7 @@ __author__ = "Mark Pesce"
 __version__ = "1.0a1"
 __license__ = "MIT"
 
-<<<<<<< HEAD
 import time, logging
-=======
-import time 
->>>>>>> 957718211678068bc43cafda4f0684d828ef3aeb
 from multiprocessing import Queue
 
 parse_queue = None
@@ -97,7 +93,6 @@ def run(parser_queue,render_queue):
 			parse(parse_queue.get())
 		time.sleep(.025)
 
-<<<<<<< HEAD
 if __name__ == "__main__":	
 	logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.DEBUG)
 	logging.debug('Logging initialized')
@@ -105,9 +100,3 @@ if __name__ == "__main__":
 	rend_queue = Queue()			# We don't do this if we're running as a module
 
 	parse(("test", "@DaringHarbourTree crown green"))
-
-
-=======
-if __name__ == '__main__':	
-	print "Running cmdparser module from the command line."
->>>>>>> 957718211678068bc43cafda4f0684d828ef3aeb

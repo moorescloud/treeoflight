@@ -15,7 +15,7 @@ __author__ = 'Mark Pesce'
 __version__ = '1.0a1'
 __license__ = 'MIT'
 
-import time, os, sys, json, threading, logging
+import time, os, stat, sys, json, threading, logging
 from multiprocessing import Queue
 
 # Very sorry -- the OAuth code was written using one module package,
