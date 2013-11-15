@@ -101,7 +101,7 @@ class UserVerify(object):
 		while True:
 			time.sleep(15)			# Sleep for 15 seconds
 			current_timestamp = time.time()
-			logging.debug("Cleaning naughtylist")
+			#logging.debug("Cleaning naughtylist")
 			for naughty in self.naughtylist:
 				if (self.naughtylist[naughty] + self.SIN_BIN_SECS) < current_timestamp:	# Time out?
 					del self.naughtylist[naughty]			# Remove from list
