@@ -23,9 +23,11 @@ rend_queue = None
 
 # The shape names as defined by Roger Foley-Fogg
 # Mapping them onto some sort of something that means something to the rendering bit
+# These mappings will change when we get on-site
 #
-shapes = { "crown": None, "ho": None, "eye": None, "heart": None, 
-"x": None, "cross": None, "cloud": None, "u": None, "star": None }
+shapes = { "crown": { "crown": (0, 1, 2) }, "ho": { "ho": (3, 4, 5) }, "eye": { "eye": (6, 7, 8)}, 
+"heart": { "heart": (9, 10, 11) }, "x": { "x": (12, 13, 14) }, "cross": { "cross": (15, 16, 17) }, 
+"cloud": { "cloud": (18, 19, 20) }, "u": { "u": (21, 22, 23) }, "star": { "star": (24, 25, 26) } }
 
 # Start with these and add more later
 #
@@ -77,7 +79,7 @@ def parse(queue_object):
 
 	# At this point we should have correctly parsed the shape and color values. We hope.
 	# Now we need to do something with them.
-	rend_queue.put([elements[1], shapes[elements[1]], cv])
+	rend_queue.put([shapes[elements[1]], cv])
 	return True
 
 
@@ -96,7 +98,7 @@ def run(parser_queue,render_queue):
 if __name__ == "__main__":	
 	logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.DEBUG)
 	logging.debug('Logging initialized')
-	logging.debug("Running cmdparser module from the command line.")
+	logging.debug("Running cmdparser module from the command line for unit tests and stuff.")
 	rend_queue = Queue()			# We don't do this if we're running as a module
 
 	parse(("test", "@DarlingXmasTree crown green"))
