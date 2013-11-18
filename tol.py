@@ -18,14 +18,15 @@ __author__ = 'Mark Pesce'
 __version__ = '1.0a1'
 __license__ = 'MIT'
 
-import sys, time
+import sys, time, os.path
 
 # setup the logging which will eventually be quite sophisticated
 #
 import logging
+logfilename = os.path.join("log", "tol-%s.txt" % str(int(time.time())))
+#logging.basicConfig(filename=logfilename, format='%(asctime)s %(levelname)s:%(message)s', datefmt='%d/%m/%Y %I:%M:%S %p', level=logging.DEBUG)
 logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s', datefmt='%d/%m/%Y %I:%M:%S %p', level=logging.DEBUG)
 logging.debug('Logging initialized')
-
 
 # Multiprocessing requires Python 2.6 or better
 v = sys.version_info
