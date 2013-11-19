@@ -25,9 +25,9 @@ rend_queue = None
 # Mapping them onto some sort of something that means something to the rendering bit
 # These mappings will change when we get on-site
 #
-shapes = { "crown": { "crown": (0, 1, 2) }, "ho": { "ho": (3, 4, 5) }, "eye": { "eye": (6, 7, 8)}, 
-"heart": { "heart": (9, 10, 11) }, "x": { "x": (12, 13, 14) }, "cross": { "cross": (15, 16, 17) }, 
-"cloud": { "cloud": (18, 19, 20) }, "u": { "u": (21, 22, 23) }, "star": { "star": (24, 25, 26) } }
+shapes = { "crown": [ "crown", (0, 1, 2) ], "ho": [ "ho", (3, 4, 5) ], "eye": [ "eye", (6, 7, 8)], 
+"heart": [ "heart", (9, 10, 11) ], "x": [ "x", (12, 13, 14) ], "cross": [ "cross", (15, 16, 17) ], 
+"cloud": [ "cloud", (18, 19, 20) ], "u": [ "u", (21, 22, 23) ], "star": [ "star", (24, 25, 26) ] }
 
 # Start with these and add more later
 #

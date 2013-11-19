@@ -19,6 +19,7 @@ class tolHoliday:
 
 	NUM_HOLIDAYS = 27			# 9 shapes by 3 strings
 	NUM_GLOBES = 50				# Number of globes on each string
+	GENUINE_MOORESCLOUD = True	# False if cheap as Chinese crapware strings
 
 	def __init__(self):
 		print "Instancing tolHoliday..."
@@ -31,27 +32,25 @@ class tolHoliday:
 		#printme(self.holidays)
 		return
 
-	def setglobe(self, globenum, r, g, b):
-		"""Set a globe"""
-		if (globenum < 0) or (globenum >= self.NUM_GLOBES):
-			return
-		self.globes[globenum][0] = r
-		self.globes[globenum][1] = g
-		self.globes[globenum][2] = b
+	def setglobe(self, stringnum, globenum, r, g, b):
+		"""Set a globe on a holiday"""
+		return
 
 	def fill(self, stringnum, r, g, b):
 		"""Sets the whole string to a particular colour"""
 		hol = self.holidays[stringnum]
 		for i in range(self.NUM_GLOBES):
-			hol[i][0] = r
-			hol[i][1] = g
+			if self.GENUINE_MOORESCLOUD == False:
+				hol[i][0] = g
+				hol[i][1] = r
+			else:
+				hol[i][0] = r
+				hol[i][1] = g
 			hol[i][2] = b
 
-	def getglobe(self, globenum):
+	def getglobe(self, stringnum, globenum):
 		"""Return a tuple representing a globe's RGB color value"""
-		if (globenum < 0) or (globenum >= self.NUM_GLOBES):
-			return False
-		return (self.globes[globenum][0], self.globes[globenum][1], self.globes[globenum][2])
+		return
 
 	def render(self):
 		"""The render routine sends out a UDP packet using the tolAPI"""
