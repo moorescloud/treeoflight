@@ -273,9 +273,12 @@ def run(parser_queue):
 	#stream.filter(track=[self.searchterm])  # Blocking call.  We do not come back.
 	stream.userstream()  # Blocking call.  We do not come back.  We think this is right.  Possibly.
 
-	while True:
-		printme("Where we should never be in the listener -- que?")
-		time.sleep(1)
+	# If we've gotten here, the stream has died, in which case we need to restart this whole business.
+	# I've noticed the stream does die periodically.  All we can really do is restart.  And hope.
+	#
+	logging.critical("Stream died, restarting...")
+	import subprocess
+	subprocess.call(["/home/mpesce/scripts/restart.sh"])		# This should kill us dead, and restart us.
 
 def printme(str):
 	"""A print function that can switch quickly to logging"""
@@ -284,8 +287,8 @@ def printme(str):
 
 if __name__ == '__main__':	
 	logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
-	logging.debug('Logging initialized')
-	logging.debug("Running cmdparser module from the command line.")
+	printme('Logging initialized')
+	printme("Running listener module from the command line.")
 	cmd_parser_queue = None
 	parser_queue = Queue()
 	printme("one")

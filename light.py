@@ -26,7 +26,7 @@ class tolAPI:
 	MCAST_GRP = '224.0.0.249'
 	MCAST_PORT = 9393
 	MCAST_PKT_SIZE = 4320
-	BIND_IP_ADDR = socket.gethostbyname(socket.gethostname())			# This is evil and we need a generalized solution thingy
+	BIND_IP_ADDR = "192.168.0.20" # This is evil and we need a generalized solution thingy
 	sock = None
 
 	def __init__(self):

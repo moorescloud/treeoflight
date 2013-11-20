@@ -21,11 +21,17 @@ __license__ = 'MIT'
 import sys, time, os.path
 
 # setup the logging which will eventually be quite sophisticated
+# the TO_FILE variable, if True, writes the log to log/<epoch>.txt
+# So that we can tail -f it from afar.  Which we will.
 #
 import logging
-logfilename = os.path.join("log", "tol-%s.txt" % str(int(time.time())))
-#logging.basicConfig(filename=logfilename, format='%(asctime)s %(levelname)s:%(message)s', datefmt='%d/%m/%Y %I:%M:%S %p', level=logging.DEBUG)
-logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s', datefmt='%d/%m/%Y %I:%M:%S %p', level=logging.DEBUG)
+
+TO_FILE = True
+if TO_FILE == True:
+	logfilename = os.path.join("log", "tol-%s.txt" % str(int(time.time())))
+	logging.basicConfig(filename=logfilename, format='%(asctime)s %(levelname)s:%(message)s', datefmt='%d/%m/%Y %I:%M:%S %p', level=logging.DEBUG)
+else:
+	logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s', datefmt='%d/%m/%Y %I:%M:%S %p', level=logging.DEBUG)
 logging.debug('Logging initialized')
 
 # Multiprocessing requires Python 2.6 or better

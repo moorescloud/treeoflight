@@ -22,7 +22,7 @@ class tolHoliday:
 	GENUINE_MOORESCLOUD = True	# False if cheap as Chinese crapware strings
 
 	def __init__(self):
-		print "Instancing tolHoliday..."
+		printme "Instancing tolHoliday..."
 		self.holidays = []
 		for i in range(self.NUM_HOLIDAYS):
 			da_globes = []
