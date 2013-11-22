@@ -19,7 +19,7 @@ class tolHoliday:
 
 	NUM_HOLIDAYS = 27			# 9 shapes by 3 strings
 	NUM_GLOBES = 50				# Number of globes on each string
-	GENUINE_MOORESCLOUD = True	# False if cheap as Chinese crapware strings
+	GENUINE_MOORESCLOUD = False	# False if cheap as Chinese crapware strings
 
 	def __init__(self):
 		printme("Instancing tolHoliday...")
