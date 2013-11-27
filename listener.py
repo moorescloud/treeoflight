@@ -27,6 +27,7 @@ import twitter
 from tweepy.streaming import StreamListener
 from tweepy import OAuthHandler
 from tweepy import Stream
+from tweepy import API 
 
 # File name for the oauth info
 #
@@ -59,6 +60,8 @@ def check_twitter_auth():
 			twitter_handle = result['screen_name']
 			#print 'Good, we seem to be authorized for username %s with id %d' % (twitter_handle, int(twitter_id))
 			authorized = twapi
+			#globs.twitter_apis.append(authorized) 		# Put that into the global module
+			#logging.debug("Got the API for twitter, appended in globs as element %d" % len(globs.twitter_apis))
 		except twitter.TwitterError as e:
 			logging.debug("Call failed, we don't seem to be authorized with existing credentials.  Deleting...")
 			print e
@@ -266,6 +269,13 @@ def run(parser_queue):
 	l = StdOutListener()
 	auth = OAuthHandler(consumer_key, consumer_secret)
 	auth.set_access_token(tokens[0], tokens[1])
+
+	# # Setup an API thingy
+	# try:
+	# 	a_thingy = API(auth)
+	# 	logging.debug("Got API of %s" % a_thingy)
+	# except:
+	# 	logging.critical("Failed to get the API for tweepy!")
 
 	# Set up the stream listener
 	stream = Stream(auth, l)	

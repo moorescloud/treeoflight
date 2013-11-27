@@ -26,7 +26,7 @@ import sys, time, os.path
 #
 import logging
 
-TO_FILE = True
+TO_FILE = False
 if TO_FILE == True:
 	logfilename = os.path.join("log", "tol-%s.txt" % str(int(time.time())))
 	logging.basicConfig(filename=logfilename, format='%(asctime)s %(levelname)s:%(message)s', datefmt='%d/%m/%Y %I:%M:%S %p', level=logging.DEBUG)

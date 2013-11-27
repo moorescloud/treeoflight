@@ -79,7 +79,7 @@ def parse(queue_object):
 
 	# At this point we should have correctly parsed the shape and color values. We hope.
 	# Now we need to do something with them.
-	rend_queue.put([shapes[elements[1]], cv])
+	rend_queue.put([shapes[elements[1]], cv, user])
 	return True
 
 

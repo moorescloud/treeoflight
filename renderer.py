@@ -15,11 +15,29 @@ __author__ = 'Mark Pesce'
 __version__ = '1.0a1'
 __license__ = 'MIT'
 
-import time, socket, sys
+import time, socket, sys, os, stat
 from multiprocessing import Queue
 import logging
 import tolholiday
 
+from twitter.oauth_dance import oauth_dance
+import twitter
+
+from tweepy import OAuthHandler
+from tweepy import API
+
+# File name for the oauth info
+#
+# This will work for *NIX systems, not sure for Windows.
+#
+fn = os.path.join(os.path.expanduser('~'),'.tol-oauth')
+
+# New codes specific for the Tree-of-Light twitter application
+
+consumer_secret=con_secret = "5BOTziGnWOuGRNIWyBknuKck7Rn4gUPgO9EusgKsJhI"
+consumer_key=con_key = "Hzj8ndSL6cGEjXOwMltRBQ"
+
+tweepy_api = None
 rend_queue = None
 hol = None
 api = None
@@ -30,7 +48,7 @@ class tolAPI:
 	MCAST_GRP = '224.0.0.249'
 	MCAST_PORT = 9393
 	MCAST_PKT_SIZE = 4320
-	BIND_IP_ADDR = "192.168.0.20"			# This is evil and we need a generalized solution thingy
+	BIND_IP_ADDR = "192.168.0.2"			# This is evil and we need a generalized solution thingy
 	sock = None
 
 	def __init__(self):
@@ -53,10 +71,19 @@ def makeRGB(hexcolor):
 	b = (hexcolor & 0xff)
 	return (r,g,b)
 
+def alert_twitter(username):
+	"""Use Twitter to send alert to user that their colour is about to come up."""
+	global tweepy_api
+
+	the_tweet = u"""@%s It's your time to shine!""" % username
+	logging.debug(the_tweet)
+	tweepy_api.update_status(the_tweet)
+	return
+
 def render(queue_object):
 	"""Rendering routine.  Takes stuffs off the queue and does stuffs with it."""
 	global hol, api
-	(shape_data, colorval) = queue_object
+	(shape_data, colorval, user) = queue_object
 	printme("shape_data: %s, colorval 0x%06x" % (shape_data, colorval))
 
 	# At this very first level of implementation, we'll simply send the colour value to the requiste strings.
@@ -69,13 +96,29 @@ def render(queue_object):
 		logging.debug("Writing to string %d" % string_number)
 		hol.fill(string_number, rgb[0], rgb[1], rgb[2])
 	pkt = hol.render()
+	alert_twitter(user)
 	api.transmit(pkt)
 	return
 
 def run(render_queue):
 	"""So this can be loaded as a module and run via multiprocessing"""
-	global rend_queue, hol, api
+	global rend_queue, hol, api, consumer_key, consumer_secret, tweepy_api
 	rend_queue = render_queue
+
+	# Log into Twitter, get credentials.	
+	tokens = twitter.oauth.read_token_file(fn)
+	logging.debug("We have authorization tokens in the renderer")
+
+	auth = OAuthHandler(consumer_key, consumer_secret)
+	auth.set_access_token(tokens[0], tokens[1])
+
+	# Setup an API thingy
+	#try:
+	tweepy_api = API(auth)
+	logging.debug("Got API of %s" % tweepy_api)
+	logging.debug("We have the API for tweepy in the renderer")
+	#except:
+	#	logging.critical("Failed to get the API for tweepy in the renderer!")
 
 	# Instance both the holiday object and the api object
 	hol = tolholiday.tolHoliday()
