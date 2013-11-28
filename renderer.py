@@ -15,7 +15,7 @@ __author__ = 'Mark Pesce'
 __version__ = '1.0a1'
 __license__ = 'MIT'
 
-import time, socket, sys, os, stat
+import time, socket, sys, os, stat, threading 
 from multiprocessing import Queue
 import logging
 import tolholiday
@@ -25,6 +25,7 @@ import twitter
 
 from tweepy import OAuthHandler
 from tweepy import API
+from tweepy import TweepError
 
 # File name for the oauth info
 #
@@ -40,7 +41,13 @@ consumer_key=con_key = "Hzj8ndSL6cGEjXOwMltRBQ"
 tweepy_api = None
 rend_queue = None
 hol = None
-api = None
+tolapi = None
+updater = None
+
+# Here are the render thingies.
+#
+curr_render = {}			# The list of current shapes being rendered, with timestamps
+wait_list = []				# The list of shapes waiting to be rendered
 
 class tolAPI:
 	"""Handles multicast transmission to the connected strings"""
@@ -75,34 +82,107 @@ def alert_twitter(username):
 	"""Use Twitter to send alert to user that their colour is about to come up."""
 	global tweepy_api
 
-	the_tweet = u"""@%s It's your time to shine!""" % username
+	# We add a timestamp in order to make the tweet unique for Twitter, or else it gets cranky
+	ts = int(time.time())
+	the_tweet = u"""@%s It's your time to shine! #christmasconversations #santafest #%d""" % (username,ts)
 	logging.debug(the_tweet)
-	tweepy_api.update_status(the_tweet)
+	try:
+		tweepy_api.update_status(the_tweet, lat=-33.872932, long=151.199453, display_coordinates=True)
+	except TweepError as e:
+		logging.error("Update failed with error %s, could not notify %s" % (e,username))
 	return
 
-def render(queue_object):
+def render():
 	"""Rendering routine.  Takes stuffs off the queue and does stuffs with it."""
-	global hol, api
-	(shape_data, colorval, user) = queue_object
-	printme("shape_data: %s, colorval 0x%06x" % (shape_data, colorval))
+	global hol, tolapi
 
-	# At this very first level of implementation, we'll simply send the colour value to the requiste strings.
-	# We'll establish a queue soon, and keep things around, etc.
+	# We  walk the curr_render dictionary, and render each entry to the buffer
 	#
-	# The shape data is an array with the shape name, and list of strings mapped to that shape
-	#
-	rgb = makeRGB(colorval)
-	for string_number in shape_data[1]:
-		logging.debug("Writing to string %d" % string_number)
-		hol.fill(string_number, rgb[0], rgb[1], rgb[2])
+	for a_shape in curr_render:
+		((shape_data, colorval, user), timestamp) = curr_render[a_shape]
+
+		# Now render the colors onto those holidays
+		rgb = makeRGB(colorval)
+		for string_number in shape_data[1]:
+			logging.debug("Writing to string %d" % string_number)
+			hol.fill(string_number, rgb[0], rgb[1], rgb[2])
+
+	# Now that we have everything, render to a byte array and send it out
 	pkt = hol.render()
-	alert_twitter(user)
-	api.transmit(pkt)
+	tolapi.transmit(pkt)
+	return
+
+class ShapeUpdater(object):
+	"""This object is used to keep track of the queue of shapes waiting to be displayed"""
+
+	def check_queue(self):
+		"""This thread checks the wait_list to see if shapes should move into the curr_render list."""
+		global wait_list, curr_render
+
+		while True:
+			time.sleep(self.SCANTIME)			# Sleep for predetermined time
+			if (len(wait_list) > 0):			# Only if there's something on the list do we bother
+				changed = False
+				current_timestamp = time.time()
+				logging.debug("Checking queue")
+				i = 0
+				while (i < len(wait_list)):
+					shape_name = wait_list[i][0]	# Get the shape name waiting
+					try:
+						curr_entry = curr_render[shape_name]
+					except KeyError:
+						logging.error("Shape not in curr_render, how can this be?")
+						continue
+					if current_timestamp - curr_entry[1] > 15:	# 15 seconds have passed?
+						curr_render[shape_name] = (wait_list[i][1], time.time())		# Update the render info
+						changed = True
+						alert_twitter(wait_list[i][1][2])		# Send an alert to the user that their shape has come up
+						wait_list.pop(i)						# And remove from the wait list - DOES THIS SCREW THINGS UP?
+						logging.debug("Popping %s from wait_list" % shape_name)
+						# We don't increment the counter in this case because the list got smaller
+					else:
+						i = i + 1			# List hasn't gotten smaller, so we increment the list here.
+				if changed == True:
+					render()									# If things have changed, render to the strings
+
+	def __init__(self):
+		"""Set up the data structures for the ShapeUpdater object"""
+		# Will likely read whitelist and blacklist in from file system
+		self.SCANTIME = 5       # 5 seconds between scans
+
+		# And start the cleaner thread
+		self.checker = threading.Thread(target=self.check_queue)
+		self.checker.start()
+
+		return
+
+def process_queue(queue_object):
+	"""We get a queue object, and determine whether it goes out immediately onto the render display
+	Or if it goes into the wait queue, while we wait for the currently rendered shape to finish up."""
+	global wait_list, curr_render
+
+	(shape_data, colorval, user) = queue_object
+	printme("renderer --> shape_data: %s, colorval 0x%06x" % (shape_data, colorval))
+
+	# Ok so the first element of shape_data should be the shape name.
+	# If that is already in curr_render, it needs to go on the wait_list
+	# Otherwise it gets put onto curr_render with a timestamp, then rendered.
+	shape_name = shape_data[0]
+	if shape_name in curr_render:	# Is it already in a slot?
+		wait_packet = (shape_name, queue_object, time.time())
+		wait_list.append(wait_packet)
+		logging.debug("Already displaying %s, appended to wait_list")
+	else:		# Add it to the list of stuffs being rendered now
+		curr_render[shape_name] = (queue_object, time.time())
+		logging.debug("Shape %s going onto the curr_render list" % shape_name)
+		alert_twitter(user)
+		render()		# And force a render of the curr_render list
+
 	return
 
 def run(render_queue):
 	"""So this can be loaded as a module and run via multiprocessing"""
-	global rend_queue, hol, api, consumer_key, consumer_secret, tweepy_api
+	global rend_queue, hol, tolapi, consumer_key, consumer_secret, tweepy_api, updater
 	rend_queue = render_queue
 
 	# Log into Twitter, get credentials.	
@@ -113,21 +193,22 @@ def run(render_queue):
 	auth.set_access_token(tokens[0], tokens[1])
 
 	# Setup an API thingy
-	#try:
-	tweepy_api = API(auth)
-	logging.debug("Got API of %s" % tweepy_api)
-	logging.debug("We have the API for tweepy in the renderer")
-	#except:
-	#	logging.critical("Failed to get the API for tweepy in the renderer!")
+	try:
+		tweepy_api = API(auth)
+		logging.debug("Got API of %s" % tweepy_api)
+		logging.debug("We have the API for tweepy in the renderer")
+	except:
+		logging.critical("Failed to get the API for tweepy in the renderer!")
 
-	# Instance both the holiday object and the api object
+	# Instance  the holiday object and the api object and the queue updater object
 	hol = tolholiday.tolHoliday()
-	api = tolAPI()
+	tolapi = tolAPI()
+	updater = ShapeUpdater()
 
 	while True:
 		# Check the command parser queue for messages
 		if rend_queue.empty() == False:
-			render(rend_queue.get())
+			process_queue(rend_queue.get())
 		time.sleep(.025)
 
 def printme(str):

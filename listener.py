@@ -214,7 +214,7 @@ class StdOutListener(StreamListener):
 	def on_data(self, data):
 		global uv, cmd_parser_queue
 
-		printme("Got data")
+		#printme("Got data")
 		#printme(data)
 
 		try:
