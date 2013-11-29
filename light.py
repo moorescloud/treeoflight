@@ -26,13 +26,13 @@ class tolAPI:
 	MCAST_GRP = '224.0.0.249'
 	MCAST_PORT = 9393
 	MCAST_PKT_SIZE = 4320
-	BIND_IP_ADDR = "192.168.0.20" # This is evil and we need a generalized solution thingy
+	#BIND_IP_ADDR = "192.168.0.20" # This is evil and we need a generalized solution thingy
 	sock = None
 
 	def __init__(self):
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-		self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
-		self.sock.bind((self.BIND_IP_ADDR, self.MCAST_PORT))		# Or else it doesn't work, I've learned.
+		#self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
+		#self.sock.bind((self.BIND_IP_ADDR, self.MCAST_PORT))		# Or else it doesn't work, I've learned.
 
 	def transmit(self, pkt):
 		if len(pkt) != self.MCAST_PKT_SIZE:

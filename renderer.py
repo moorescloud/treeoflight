@@ -43,25 +43,27 @@ rend_queue = None
 hol = None
 tolapi = None
 updater = None
+backoff = 0
+BACKOFF_MAX = 600 # Ten minutes backoff
 
 # Here are the render thingies.
 #
 curr_render = {}			# The list of current shapes being rendered, with timestamps
 wait_list = []				# The list of shapes waiting to be rendered
 
-class tolAPI:
+class tolAPImcast:
 	"""Handles multicast transmission to the connected strings"""
 
 	MCAST_GRP = '224.0.0.249'
 	MCAST_PORT = 9393
 	MCAST_PKT_SIZE = 4320
-	BIND_IP_ADDR = "192.168.0.2"			# This is evil and we need a generalized solution thingy
+	#BIND_IP_ADDR = "192.168.0.2"			# This is evil and we need a generalized solution thingy
 	sock = None
 
 	def __init__(self):
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-		self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
-		self.sock.bind((self.BIND_IP_ADDR, self.MCAST_PORT))		# Or else it doesn't work, I've learned.
+		#self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
+		#self.sock.bind((self.BIND_IP_ADDR, self.MCAST_PORT))		# Or else it doesn't work, I've learned.
 
 	def transmit(self, pkt):
 		if len(pkt) != self.MCAST_PKT_SIZE:
@@ -69,6 +71,45 @@ class tolAPI:
 			return
 
 		self.sock.sendto(pkt, (self.MCAST_GRP, self.MCAST_PORT))
+		return
+
+class tolAPIpipe:
+	"""Writes to pipe which handles transmission to the connected strings"""
+
+	pipename = '/run/multicastr.pipe'
+	BUFFER_SIZE = 4320
+
+	def __init__(self):
+		"""Open the named pipe."""
+
+		try:
+			self.pipedesc = os.open(self.pipename, os.O_WRONLY)
+		except OSError, e:
+			logging.critical("Could not open named pipe. Reason: %s" % e)
+			self.pipedesc = None
+		return			
+
+	def close(self):
+		"""Closes the named pipe"""
+
+		try:
+			os.close(self.pipedesc)
+			self.pipedesc = None
+		except OSError, e:
+			logging.critical("Could not close named pipe. Reason: %s" % e)
+
+		return
+
+	def transmit(self, buffer):
+		"""Write to the named pipe."""
+
+		if (len(buffer) == self.BUFFER_SIZE):	# Only if it's the right lenght, precisely
+			try:
+				count = os.write(self.pipedesc, buffer)
+				#printme("Wrote %d bytes to pipe" % count)
+			except OSError as e:
+				logging.critical("Could not write to named pipe. Reason: %s" % e)
+
 		return
 
 def makeRGB(hexcolor):
@@ -80,7 +121,10 @@ def makeRGB(hexcolor):
 
 def alert_twitter(username):
 	"""Use Twitter to send alert to user that their colour is about to come up."""
-	global tweepy_api
+	global tweepy_api, backoff, BACKOFF_MAX
+
+	if ((time.time() - backoff) < BACKOFF_MAX):		# Are we backing off?
+		return 							
 
 	# We add a timestamp in order to make the tweet unique for Twitter, or else it gets cranky
 	ts = int(time.time())
@@ -89,7 +133,14 @@ def alert_twitter(username):
 	try:
 		tweepy_api.update_status(the_tweet, lat=-33.872932, long=151.199453, display_coordinates=True)
 	except TweepError as e:
-		logging.error("Update failed with error %s, could not notify %s" % (e,username))
+		try:
+			if e[0]['code'] == 185:
+				logging.debug("Too many updates to Twitter, backing off...")
+				backoff = time.time()
+			else:
+				logging.error("Update failed with error %s, could not notify %s" % (e,username))
+		except:
+			logging.error("Update failed, couldn't even parse error code %s" % e)
 	return
 
 def render():
@@ -171,7 +222,7 @@ def process_queue(queue_object):
 	if shape_name in curr_render:	# Is it already in a slot?
 		wait_packet = (shape_name, queue_object, time.time())
 		wait_list.append(wait_packet)
-		logging.debug("Already displaying %s, appended to wait_list")
+		logging.debug("Already displaying %s, appended to wait_list" % shape_name)
 	else:		# Add it to the list of stuffs being rendered now
 		curr_render[shape_name] = (queue_object, time.time())
 		logging.debug("Shape %s going onto the curr_render list" % shape_name)
@@ -202,7 +253,7 @@ def run(render_queue):
 
 	# Instance  the holiday object and the api object and the queue updater object
 	hol = tolholiday.tolHoliday()
-	tolapi = tolAPI()
+	tolapi = tolAPIpipe()				# use tolAPImcast for direct multicast
 	updater = ShapeUpdater()
 
 	while True:
