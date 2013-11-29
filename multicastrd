@@ -1,0 +1,51 @@
+#!/bin/bash
+
+unset PID
+PIDFILE='/run/multicastrd.pid'
+
+THEHOME='/home/mpesce/Dropbox/MooresCloud/demo/tol'
+
+if [[ -r ${PIDFILE} ]]; then
+	read -r PID <"${PIDFILE}"
+	if [[ -n ${PID} && ! -d /proc/${PID} ]]; then
+		rm -f "${PIDFILE}"
+		unset PID
+	fi
+fi
+
+case "$1" in
+	start)
+		echo "Starting Multicastr Pipe Daemon"
+		if [[ -z ${PID} ]] 
+		then
+			if [ -e '/run/multicastr.pipe' ]
+			then
+				rm /run/multicastr.pipe 
+			fi
+			pushd .
+			cd $THEHOME
+			nohup python $THEHOME/multicastr.py >> /dev/null &
+			PID=$!
+			echo ":: multicastrd process "$PID
+			echo $PID > $PIDFILE
+			popd
+		else
+			exit 1
+		fi
+		;;
+	stop)
+		echo "Stopping Multicastr Pipe Daemon"
+		if [[ -n ${PID} ]] && kill "${PID}" &>/dev/null; then
+			rm ${PIDFILE}
+		else
+			exit 1
+		fi
+		;;
+	restart)
+		$0 stop
+		sleep 1
+		$0 start
+		;;
+	*)
+		echo "usage: $0 {start|stop|restart}"
+esac
